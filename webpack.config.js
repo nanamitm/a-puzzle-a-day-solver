@@ -39,7 +39,8 @@ module.exports = {
     },
     output: {
         path: path.resolve(__dirname, 'public/dist/'),
-        publicPath: "./dist/",
+        // Use an absolute public path to avoid double "dist" when resolving dynamic chunks.
+        publicPath: "/dist/",
         filename: 'main.js',
     },
     plugins: [
@@ -66,6 +67,8 @@ module.exports = {
         layers: true,
     },
     devServer: {
+        host: "127.0.0.1",
+        port: 8081,
         compress: true,
         devMiddleware : {
             publicPath: "/dist/",
