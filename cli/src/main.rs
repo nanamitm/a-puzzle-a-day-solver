@@ -36,7 +36,7 @@ fn main() -> Result<()> {
     opts.optopt(
         "t",
         "type",
-        "puzzle type. 'd' for 'DragonFjord', 'j' for 'JarringWords', 't' for 'Tetromino', 'w' for 'WeekDay' (default='d')",
+        "puzzle type. 'd' for 'DragonFjord', 'j' for 'JarringWords', 't' for 'TheRammer', 'w' for 'WeekDay' (default='d')",
         "[d|j|t|w]",
     );
     opts.optflag("h", "help", "print this help menu");

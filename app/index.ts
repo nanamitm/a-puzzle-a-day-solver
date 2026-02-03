@@ -96,7 +96,7 @@ function addOptions() {
     w_form.disabled = true;
 
     const p_form =<HTMLSelectElement>document.getElementById(PUZZLE_TYPE_FORM_ID);
-    ["DragonFjord's A-Puzzle-A-Day", "JarringWords's Calendar Puzzle", "Tetromino-type Calendar Puzzle", "WeekDay Calendar Puzzle"].forEach(typ => {
+    ["DragonFjord's A-Puzzle-A-Day", "JarringWords's Calendar Puzzle", "TheRammer Puzzle Calendar", "WeekDay Calendar Puzzle"].forEach(typ => {
         const opt = document.createElement("option");
         opt.text = typ;
         p_form.add(opt);
