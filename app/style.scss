@@ -3,6 +3,13 @@
 body {
     font-family: "Open Sans", sans-serif;
     font-size: 1rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
 }
 
 
@@ -93,9 +100,4 @@ td .cell {
     line-height: 5vw;
     font-family: 'Roboto Mono', monospace;
     vertical-align: middle;
-}
-
-footer{
-    position: absolute;
-    bottom: 0;
 }
