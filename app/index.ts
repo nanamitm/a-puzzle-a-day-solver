@@ -20,6 +20,110 @@ enum PuzzleType {
     WeekDay
 }
 
+type Prefill = {
+    month: number;
+    day: number;
+    weekday: number;
+    puzzleType: PuzzleType;
+};
+
+function parsePuzzleType(raw: string | null): PuzzleType | null {
+    if (!raw) {
+        return null;
+    }
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+        return null;
+    }
+    const numeric = Number.parseInt(trimmed, 10);
+    if (!Number.isNaN(numeric) && numeric >= PuzzleType.DragonFjord && numeric <= PuzzleType.WeekDay) {
+        return numeric as PuzzleType;
+    }
+    const key = trimmed.toLowerCase().replace(/[\s-_']/g, "");
+    switch (key) {
+        case "dragonfjord":
+        case "apuzzleaday":
+        case "apuzzleadaydragonfjord":
+            return PuzzleType.DragonFjord;
+        case "jarringwords":
+        case "calendarpuzzle":
+            return PuzzleType.JarringWords;
+        case "therammer":
+        case "tetromino":
+        case "tetrominopuzzle":
+            return PuzzleType.Tetromino;
+        case "weekday":
+        case "weekdaycalendar":
+        case "weekdaycalendarpuzzle":
+            return PuzzleType.WeekDay;
+        default:
+            return null;
+    }
+}
+
+function parseWeekday(raw: string | null): number | null {
+    if (!raw) {
+        return null;
+    }
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+        return null;
+    }
+    const numeric = Number.parseInt(trimmed, 10);
+    if (!Number.isNaN(numeric) && numeric >= 0 && numeric <= 6) {
+        return numeric;
+    }
+    const key = trimmed.toLowerCase();
+    const map: { [key: string]: number } = {
+        "sun": 0, "sunday": 0,
+        "mon": 1, "monday": 1,
+        "tue": 2, "tues": 2, "tuesday": 2,
+        "wed": 3, "wednesday": 3,
+        "thu": 4, "thur": 4, "thurs": 4, "thursday": 4,
+        "fri": 5, "friday": 5,
+        "sat": 6, "saturday": 6,
+    };
+    return map[key] ?? null;
+}
+
+function parseMonthDay(params: URLSearchParams): { month: number; day: number } | null {
+    const dateRaw = params.get("date");
+    if (dateRaw) {
+        const match = dateRaw.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (match) {
+            const year = Number.parseInt(match[1], 10);
+            const month = Number.parseInt(match[2], 10);
+            const day = Number.parseInt(match[3], 10);
+            if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return { month, day };
+            }
+        }
+    }
+    const monthRaw = params.get("month") ?? params.get("m");
+    const dayRaw = params.get("day") ?? params.get("d");
+    if (monthRaw && dayRaw) {
+        const month = Number.parseInt(monthRaw, 10);
+        const day = Number.parseInt(dayRaw, 10);
+        if (!Number.isNaN(month) && !Number.isNaN(day) && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return { month, day };
+        }
+    }
+    return null;
+}
+
+function parsePrefill(today: Date): Prefill {
+    const params = new URLSearchParams(window.location.search);
+    const puzzleType = parsePuzzleType(
+        params.get("type") ?? params.get("puzzle") ?? params.get("puzzleType") ?? params.get("puzzle_type")
+    ) ?? PuzzleType.DragonFjord;
+    const monthDay = parseMonthDay(params);
+    const month = monthDay?.month ?? (today.getMonth() + 1);
+    const day = monthDay?.day ?? today.getDate();
+    const weekday = parseWeekday(params.get("weekday") ?? params.get("w")) ?? today.getDay();
+
+    return { month, day, weekday, puzzleType };
+}
+
 function buttonOnClick() {
     const m_form =<HTMLSelectElement>document.getElementById(MONTH_FORM_ID);
     const month = m_form.selectedIndex + 1;
@@ -65,10 +169,9 @@ async function callSolver(month: number, day: number, weekday: number, puzzle_ty
     });
 }
 
-function addOptions() {
+function addOptions(prefill: Prefill) {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const today = new Date();
 
     const m_form =<HTMLSelectElement>document.getElementById(MONTH_FORM_ID);
     months.forEach(m => {
@@ -76,7 +179,7 @@ function addOptions() {
         opt.text = m;
         m_form.add(opt);
     });
-    m_form.selectedIndex = today.getMonth();
+    m_form.selectedIndex = Math.min(Math.max(prefill.month, 1), 12) - 1;
 
     const d_form =<HTMLSelectElement>document.getElementById(DAY_FORM_ID);
     for (let i = 1; i <= 31; i++) {
@@ -84,7 +187,7 @@ function addOptions() {
         opt.text = i.toString();
         d_form.add(opt);
     }
-    d_form.selectedIndex = today.getDate() - 1;
+    d_form.selectedIndex = Math.min(Math.max(prefill.day, 1), 31) - 1;
 
     const w_form =<HTMLSelectElement>document.getElementById(WEEKDAY_FORM_ID);
     weekdays.forEach(w => {
@@ -92,7 +195,7 @@ function addOptions() {
         opt.text = w;
         w_form.add(opt);
     });
-    w_form.selectedIndex = today.getDay();
+    w_form.selectedIndex = Math.min(Math.max(prefill.weekday, 0), 6);
     w_form.disabled = true;
 
     const p_form =<HTMLSelectElement>document.getElementById(PUZZLE_TYPE_FORM_ID);
@@ -101,7 +204,7 @@ function addOptions() {
         opt.text = typ;
         p_form.add(opt);
     });
-    p_form.selectedIndex = 0;
+    p_form.selectedIndex = prefill.puzzleType;
 }
 
 function onChangePuzzleType() {
@@ -175,7 +278,9 @@ function initialize() {
     document.getElementById(PUZZLE_TYPE_FORM_ID).onchange=onChangePuzzleType;
     document.getElementById(SOLVE_BUTTON_ID).onclick=buttonOnClick;
 
-    addOptions();
+    const prefill = parsePrefill(new Date());
+    addOptions(prefill);
+    onChangePuzzleType();
 }
 
 initialize();
