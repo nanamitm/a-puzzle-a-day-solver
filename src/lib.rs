@@ -21,17 +21,22 @@ pub fn find_solution(
         let y = (month - 1) - x * 6;
         Point::new(x, y)
     };
-    let d = {
-        let x = (day - 1) / 7 + 2;
-        let y = (day - 1) % 7;
-        Point::new(x, y)
-    };
     let puzzle_type = match puzzle_type {
         0 => PuzzleType::DragonFjord,
         1 => PuzzleType::JarringWords,
         2 => PuzzleType::Tetromino,
         3 => PuzzleType::WeekDay,
         _x => panic!("{}", "invalid puzzle_type: {x}"),
+    };
+    let d = {
+        if puzzle_type == PuzzleType::Tetromino && day >= 29 {
+            // Tetromino type uses the bottom-right 3 cells for 29-31.
+            Point::new(6, day - 25)
+        } else {
+            let x = (day - 1) / 7 + 2;
+            let y = (day - 1) % 7;
+            Point::new(x, y)
+        }
     };
     let w = if puzzle_type == PuzzleType::WeekDay {
         let x = if week < 4 { 6 } else { 7 };

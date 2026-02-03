@@ -77,15 +77,19 @@ fn main() -> Result<()> {
         .unwrap()
         .parse()
         .context("invalid number was given as day")?;
-    let day_pos = {
-        let x = (day - 1) / 7 + 2;
-        let y = (day - 1) % 7;
-        Point::new(x as i32, y as i32)
-    };
-
     let typ = matches
         .opt_get::<PuzzleType>("type")?
         .unwrap_or(PuzzleType::DragonFjord);
+    let day_pos = {
+        if typ == PuzzleType::Tetromino && day >= 29 {
+            // Tetromino type uses the bottom-right 3 cells for 29-31.
+            Point::new(6, (day - 25) as i32)
+        } else {
+            let x = (day - 1) / 7 + 2;
+            let y = (day - 1) % 7;
+            Point::new(x as i32, y as i32)
+        }
+    };
 
     let week_pos = match typ {
         PuzzleType::WeekDay => {
