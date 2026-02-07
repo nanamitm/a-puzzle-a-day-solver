@@ -39,8 +39,8 @@ module.exports = {
     },
     output: {
         path: path.resolve(__dirname, 'public/dist/'),
-        // Use an absolute public path to avoid double "dist" when resolving dynamic chunks.
-        publicPath: "/dist/",
+        // Let webpack infer the correct base URL from the script location.
+        publicPath: "auto",
         filename: 'main.js',
     },
     plugins: [
