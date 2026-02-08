@@ -295,20 +295,19 @@ function applyReveal(tokens: string[][], revealSet?: Set<number>): string[][] {
     }));
 }
 
-function setHintEnabled(enabled: boolean) {
-    const hintButton = document.getElementById(HINT_BUTTON_ID);
-    const prevHintButton = document.getElementById(PREV_HINT_BUTTON_ID);
-    const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
-
-    if (enabled) {
-        hintButton?.classList.remove("is-disabled");
-        prevHintButton?.classList.remove("is-disabled");
-        nextHintButton?.classList.remove("is-disabled");
-    } else {
-        hintButton?.classList.add("is-disabled");
-        prevHintButton?.classList.add("is-disabled");
-        nextHintButton?.classList.add("is-disabled");
+function setButtonDisabled(id: string, disabled: boolean) {
+    const button = document.getElementById(id) as HTMLButtonElement | null;
+    if (!button) {
+        return;
     }
+    button.disabled = disabled;
+    button.classList.toggle("is-disabled", disabled);
+}
+
+function setHintEnabled(enabled: boolean) {
+    setButtonDisabled(HINT_BUTTON_ID, !enabled);
+    setButtonDisabled(PREV_HINT_BUTTON_ID, !enabled);
+    setButtonDisabled(NEXT_HINT_BUTTON_ID, !enabled);
 }
 
 function clearAllModeView() {
@@ -320,7 +319,7 @@ function clearAllModeView() {
     allSolutionsTruncated = false;
     const summary = document.getElementById(ALL_MODE_SUMMARY_ID);
     if (summary) {
-        summary.innerText = "";
+        summary.textContent = "";
         summary.classList.remove("is-visible");
     }
     const solutionList = document.getElementById(SOLUTION_LIST_ID);
@@ -334,19 +333,19 @@ function clearAllModeView() {
 function resetBoard() {
     let hint = document.getElementById(HINT_ID);
     if (hint) {
-        hint.innerText = "";
+        hint.textContent = "";
     }
     const hintButton = document.getElementById(HINT_BUTTON_ID);
-    hintButton?.classList.remove("is-disabled");
     hintButton?.classList.remove("is-hidden");
+    setButtonDisabled(HINT_BUTTON_ID, false);
     const prevHintButton = document.getElementById(PREV_HINT_BUTTON_ID);
     prevHintButton?.classList.remove("is-visible");
-    prevHintButton?.classList.remove("is-disabled");
+    setButtonDisabled(PREV_HINT_BUTTON_ID, true);
     const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
     nextHintButton?.classList.remove("is-visible");
-    nextHintButton?.classList.remove("is-disabled");
+    setButtonDisabled(NEXT_HINT_BUTTON_ID, true);
     const table = <HTMLTableElement>document.getElementById(BOARD_TABLE_ID);
-    table.innerText = "";
+    table.textContent = "";
     table.classList.remove("board-table-visible");
     clearAllModeView();
     const boardCard = document.querySelector(".board-card");
@@ -358,7 +357,7 @@ function renderSummary(text: string) {
     if (!summary) {
         return;
     }
-    summary.innerText = text;
+    summary.textContent = text;
     summary.classList.add("is-visible");
 }
 
@@ -399,7 +398,7 @@ function renderSolutionList(
             btn.classList.add("is-active");
         }
         const origin = origins[i] ?? "non-flip";
-        btn.innerText = origin === "flip-only" ? `Solution ${i + 1} (allow flipping)` : `Solution ${i + 1}`;
+        btn.textContent = origin === "flip-only" ? `Solution ${i + 1} (allow flipping)` : `Solution ${i + 1}`;
         btn.onclick = () => onSelect(i);
         list.appendChild(btn);
     }
@@ -425,7 +424,7 @@ async function solveAndCache(
         usedFlip = false;
         const hint = document.getElementById(HINT_ID);
         if (hint) {
-            hint.innerText = "";
+            hint.textContent = "";
         }
     }
 
@@ -461,7 +460,7 @@ async function solveAndCache(
     usedFlip = false;
     const hint = document.getElementById(HINT_ID);
     if (hint) {
-        hint.innerText = "No solution found.";
+        hint.textContent = "No solution found.";
     }
     return null;
 }
@@ -532,7 +531,7 @@ function renderAllMode(month: number, day: number, weekday: number) {
     if (allSolutions.length === 0) {
         renderSummary("No solution found.");
         const table = <HTMLTableElement>document.getElementById(BOARD_TABLE_ID);
-        table.innerText = "";
+        table.textContent = "";
         table.classList.remove("board-table-visible");
         renderSolutionList([], [], 0, () => undefined);
         return;
@@ -579,7 +578,7 @@ function markAllModeStaleIfNeeded() {
     }
     clearAllModeView();
     const table = <HTMLTableElement>document.getElementById(BOARD_TABLE_ID);
-    table.innerText = "";
+    table.textContent = "";
     table.classList.remove("board-table-visible");
     mode = "single";
     setHintEnabled(true);
@@ -601,7 +600,7 @@ function buttonOnClick() {
         hintIndex = hintOrder.length;
         const hint = document.getElementById(HINT_ID);
         if (hint) {
-            hint.innerText = usedFlip ? "(No solution without flipping pieces.)" : "";
+            hint.textContent = usedFlip ? "(No solution without flipping pieces.)" : "";
         }
     });
 }
@@ -609,10 +608,8 @@ function buttonOnClick() {
 function onFindAllClick() {
     mode = "all";
     resetBoard();
-    const prevHintButton = document.getElementById(PREV_HINT_BUTTON_ID);
-    prevHintButton?.classList.add("is-disabled");
-    const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
-    nextHintButton?.classList.add("is-disabled");
+    setButtonDisabled(PREV_HINT_BUTTON_ID, true);
+    setButtonDisabled(NEXT_HINT_BUTTON_ID, true);
     const { month, day, weekday, puzzleType } = getCurrentSelection();
     const allowFlip = isAllowFlipEnabled();
     renderSummary("Searching solutions (20+ possible)...");
@@ -713,7 +710,7 @@ function renderTable(
     }
 
     const table = <HTMLTableElement>document.getElementById(BOARD_TABLE_ID);
-    table.innerText = "";
+    table.textContent = "";
     table.classList.add("board-table-visible");
     const boardCard = document.querySelector(".board-card");
     boardCard?.classList.add("is-visible");
@@ -757,11 +754,11 @@ function renderTable(
             }
 
             if (board[i][j] === "M") {
-                div.innerText = MONTHS[month-1].toString();
+                div.textContent = MONTHS[month-1].toString();
             } else if (board[i][j] === "D") {
-                div.innerText = day.toString();
+                div.textContent = day.toString();
             }else if (board[i][j] === "W") {
-                div.innerText = WEEKDAYS[weekday].toString();
+                div.textContent = WEEKDAYS[weekday].toString();
             }
 
             cell.appendChild(div);
@@ -778,7 +775,7 @@ function onHintClick() {
     hintIndex = 0;
     const summary = document.getElementById(ALL_MODE_SUMMARY_ID);
     if (summary) {
-        summary.innerText = "";
+        summary.textContent = "";
         summary.classList.remove("is-visible");
     }
     const { month, day, weekday, puzzleType } = getCurrentSelection();
@@ -789,12 +786,11 @@ function onHintClick() {
         if (hintIndex >= hintOrder.length) {
             const hint = document.getElementById(HINT_ID);
             if (hint) {
-                hint.innerText = "All pieces are revealed.";
+                hint.textContent = "All pieces are revealed.";
             }
             renderTable(month, day, weekday, tokens, tokens);
             focusBoardView();
-            const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
-            nextHintButton?.classList.add("is-disabled");
+            setButtonDisabled(NEXT_HINT_BUTTON_ID, true);
             return;
         }
 
@@ -813,19 +809,18 @@ function onHintClick() {
         const hint = document.getElementById(HINT_ID);
         if (hint) {
             const flipNote = usedFlip ? " (flipping used)" : "";
-            hint.innerText = `Hint ${hintIndex} of ${hintOrder.length}${flipNote}`;
+            hint.textContent = `Hint ${hintIndex} of ${hintOrder.length}${flipNote}`;
         }
 
-        const hintButton = document.getElementById(HINT_BUTTON_ID);
-        hintButton?.classList.remove("is-disabled");
+        setButtonDisabled(HINT_BUTTON_ID, false);
         const prevHintButton = document.getElementById(PREV_HINT_BUTTON_ID);
         prevHintButton?.classList.add("is-visible");
-        prevHintButton?.classList.add("is-disabled");
+        setButtonDisabled(PREV_HINT_BUTTON_ID, true);
         const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
         nextHintButton?.classList.add("is-visible");
-        nextHintButton?.classList.remove("is-disabled");
+        setButtonDisabled(NEXT_HINT_BUTTON_ID, false);
         if (hintIndex >= hintOrder.length) {
-            nextHintButton?.classList.add("is-disabled");
+            setButtonDisabled(NEXT_HINT_BUTTON_ID, true);
         }
     });
 }
@@ -851,12 +846,11 @@ function onNextHintClick() {
         if (hintIndex >= hintOrder.length) {
             const hint = document.getElementById(HINT_ID);
             if (hint) {
-                hint.innerText = "All pieces are revealed.";
+                hint.textContent = "All pieces are revealed.";
             }
             renderTable(month, day, weekday, tokens, tokens);
             focusBoardView();
-            const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
-            nextHintButton?.classList.add("is-disabled");
+            setButtonDisabled(NEXT_HINT_BUTTON_ID, true);
             return;
         }
 
@@ -869,16 +863,17 @@ function onNextHintClick() {
         const hint = document.getElementById(HINT_ID);
         if (hint) {
             const flipNote = usedFlip ? " (flipping used)" : "";
-            hint.innerText = `Hint ${hintIndex} of ${hintOrder.length}${flipNote}`;
+            hint.textContent = `Hint ${hintIndex} of ${hintOrder.length}${flipNote}`;
         }
 
         const prevHintButton = document.getElementById(PREV_HINT_BUTTON_ID);
         prevHintButton?.classList.add("is-visible");
-        prevHintButton?.classList.remove("is-disabled");
+        setButtonDisabled(PREV_HINT_BUTTON_ID, false);
         const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
         nextHintButton?.classList.add("is-visible");
+        setButtonDisabled(NEXT_HINT_BUTTON_ID, false);
         if (hintIndex >= hintOrder.length) {
-            nextHintButton?.classList.add("is-disabled");
+            setButtonDisabled(NEXT_HINT_BUTTON_ID, true);
         }
     });
 }
@@ -891,7 +886,7 @@ function onPrevHintClick() {
         hintIndex = 0;
         const hint = document.getElementById(HINT_ID);
         if (hint) {
-            hint.innerText = "";
+            hint.textContent = "";
         }
         const { month, day, weekday, puzzleType } = getCurrentSelection();
         solveAndCache(month, day, weekday, puzzleType, isAllowFlipEnabled()).then(tokens => {
@@ -905,9 +900,10 @@ function onPrevHintClick() {
             hintButton?.classList.remove("is-hidden");
             const prevHintButton = document.getElementById(PREV_HINT_BUTTON_ID);
             prevHintButton?.classList.remove("is-visible");
-            prevHintButton?.classList.add("is-disabled");
+            setButtonDisabled(PREV_HINT_BUTTON_ID, true);
             const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
             nextHintButton?.classList.remove("is-visible");
+            setButtonDisabled(NEXT_HINT_BUTTON_ID, true);
         });
         return;
     }
@@ -924,14 +920,14 @@ function onPrevHintClick() {
         const hint = document.getElementById(HINT_ID);
         if (hint) {
             const flipNote = usedFlip ? " (flipping used)" : "";
-            hint.innerText = `Hint ${hintIndex} of ${hintOrder.length}${flipNote}`;
+            hint.textContent = `Hint ${hintIndex} of ${hintOrder.length}${flipNote}`;
         }
         const prevHintButton = document.getElementById(PREV_HINT_BUTTON_ID);
         prevHintButton?.classList.add("is-visible");
-        prevHintButton?.classList.remove("is-disabled");
+        setButtonDisabled(PREV_HINT_BUTTON_ID, false);
         const nextHintButton = document.getElementById(NEXT_HINT_BUTTON_ID);
         nextHintButton?.classList.add("is-visible");
-        nextHintButton?.classList.remove("is-disabled");
+        setButtonDisabled(NEXT_HINT_BUTTON_ID, false);
     });
 }
 

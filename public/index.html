@@ -17,10 +17,10 @@
     <body>
         <nav class="navbar navbar-expand-xs navbar-light topbar">
             <div class="container-fluid">
-                <a class="navbar-brand" onClick="location.reload()">
+                <div class="navbar-brand">
                     <img src="favicon.png" width="30" class="d-inline-block align-top" alt="logo image">
                     A-Puzzle-A-Day Solver
-                </a>
+                </div>
                 <a class="d-flex navbar-brand icon-link" href="https://github.com/keiichiw/a-puzzle-a-day-solver/"><i
                                                                                                                        class="fa fa-github" aria-hidden="true"></i></a>
             </div>
@@ -82,8 +82,8 @@
                 </section>
 
                 <section class="card board-card">
-                    <div id="hint"></div>
-                    <div id="all-mode-summary" class="all-mode-summary"></div>
+                    <div id="hint" role="status" aria-live="polite" aria-atomic="true"></div>
+                    <div id="all-mode-summary" class="all-mode-summary" role="status" aria-live="polite" aria-atomic="true"></div>
                     <div id="board" class="board-layout">
                         <div id="solution-list-panel" class="solution-list-panel">
                             <div class="solution-list-title">Solutions</div>

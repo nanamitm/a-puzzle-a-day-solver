@@ -168,7 +168,7 @@ a:hover {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
 }
 
-.form-select:focus {
+.form-select:focus-visible {
     border-color: var(--accent);
     box-shadow: 0 0 0 4px rgba(255, 107, 61, 0.2);
 }
@@ -221,13 +221,13 @@ a:hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     background-color: #ff825f;
     transform: translateY(-1px);
     box-shadow: 0 16px 28px rgba(255, 107, 61, 0.3);
 }
 
-.btn-primary:active {
+.btn-primary:active:not(:disabled) {
     transform: translateY(0);
 }
 
@@ -260,19 +260,20 @@ a:hover {
     display: none;
 }
 
-.btn-hint.is-disabled {
+.btn-hint.is-disabled,
+.btn-hint:disabled {
     opacity: 0.5;
     pointer-events: none;
 }
 
-.btn-hint:hover {
+.btn-hint:hover:not(:disabled):not(.is-disabled) {
     border-color: #ff825f;
     color: #ff825f;
     transform: translateY(-1px);
     box-shadow: 0 12px 24px rgba(255, 107, 61, 0.2);
 }
 
-.btn-hint:active {
+.btn-hint:active:not(:disabled):not(.is-disabled) {
     transform: translateY(0);
 }
 
@@ -286,15 +287,39 @@ a:hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.btn-solve-all:hover {
+.btn-solve-all:hover:not(:disabled) {
     border-color: #146c43;
     background: #157347;
     transform: translateY(-1px);
     box-shadow: 0 16px 28px rgba(25, 135, 84, 0.32);
 }
 
-.btn-solve-all:active {
+.btn-solve-all:active:not(:disabled) {
     transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.btn:focus-visible,
+.form-select:focus-visible,
+.solution-item:focus-visible,
+.icon-link:focus-visible,
+summary:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px rgba(28, 27, 31, 0.72);
+}
+
+.btn:focus:not(:focus-visible),
+.form-select:focus:not(:focus-visible),
+.solution-item:focus:not(:focus-visible),
+.icon-link:focus:not(:focus-visible),
+summary:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
 }
 
 .board-card {
