@@ -8,17 +8,13 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.wasm$/,
-                type: "webassembly/sync",
-            },
-            {
                 test: /\.tsx?$/,
                 use: 'ts-loader',
                 exclude: /node_modules/,
             },
             {
                 test: /\.s[ac]ss$/i,
-                use: ['style-loader', 'css-loader', 'less-loader'],
+                use: ['style-loader', 'css-loader', 'sass-loader'],
             },
             {
                 test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
@@ -50,6 +46,7 @@ module.exports = {
         new WasmPackPlugin({
             crateDirectory: path.resolve(__dirname, "."),
             outDir: "public/pkg",
+            extraArgs: "--target web",
         }),
         // Have this example work in Edge which doesn't ship `TextEncoder` or
         // `TextDecoder` at this time.
@@ -61,9 +58,7 @@ module.exports = {
     mode: 'development',
     experiments: {
         outputModule: true,
-        syncWebAssembly: true,
         topLevelAwait: true,
-        asyncWebAssembly: true,
         layers: true,
     },
     devServer: {

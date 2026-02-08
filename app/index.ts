@@ -3,7 +3,10 @@ import './style.scss';
 // Note that a dynamic `import` statement here is required due to
 // webpack/webpack#6615, but in theory `import { greet } from './pkg';`
 // will work here one day as well!
-const rust = import('../public/pkg/index');
+const rust = import('../public/pkg/index').then(async (m) => {
+    await m.default();
+    return m;
+});
 
 const HINT_ID: string = "hint";
 const HINT_BUTTON_ID: string = "hint-button";
