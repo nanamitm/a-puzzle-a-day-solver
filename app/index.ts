@@ -122,10 +122,10 @@ function parseWeekday(raw: string | null): number | null {
 function parseMonthDay(params: URLSearchParams): { month: number; day: number } | null {
     const dateRaw = params.get("date");
     if (dateRaw) {
-        const match = dateRaw.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        const match = dateRaw.trim().match(/^(\d{1,2})-(\d{1,2})$/);
         if (match) {
-            const month = Number.parseInt(match[2], 10);
-            const day = Number.parseInt(match[3], 10);
+            const month = Number.parseInt(match[1], 10);
+            const day = Number.parseInt(match[2], 10);
             if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
                 return { month, day };
             }
