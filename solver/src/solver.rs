@@ -41,6 +41,7 @@ impl PartialOrd for Solution {
 pub struct SolverOptions {
     pub allow_flip: bool,
     pub one_solution: bool,
+    pub max_solutions: Option<usize>,
 }
 
 fn dfs(
@@ -54,6 +55,11 @@ fn dfs(
 ) {
     if opts.one_solution && !solutions.is_empty() {
         return;
+    }
+    if let Some(max_solutions) = opts.max_solutions {
+        if solutions.len() >= max_solutions {
+            return;
+        }
     }
 
     if available_blocks.is_empty() {
@@ -133,6 +139,7 @@ mod tests {
         let opts = SolverOptions {
             allow_flip: false,
             one_solution: false,
+            max_solutions: None,
         };
         assert_eq!(solve(&board, &blocks, &opts).len(), 2);
     }
@@ -150,6 +157,7 @@ mod tests {
         let opts = SolverOptions {
             allow_flip: false,
             one_solution: false,
+            max_solutions: None,
         };
         assert_eq!(solve(&board, &blocks, &opts).len(), 4);
     }
@@ -167,9 +175,44 @@ mod tests {
         let mut opts = SolverOptions {
             allow_flip: false,
             one_solution: true,
+            max_solutions: None,
         };
         assert_eq!(solve(&board, &blocks, &opts).len(), 0);
         opts.allow_flip = true;
         assert_eq!(solve(&board, &blocks, &opts).len(), 1);
+    }
+
+    #[test]
+    fn test_max_solutions_limit() {
+        let board = Board::new_from_day_pos(
+            Point::new(0, 0),
+            Point::new(2, 0),
+            None,
+            PuzzleType::DragonFjord,
+        );
+        let blocks = Block::get_blocks(PuzzleType::JarringWords);
+        let opts = SolverOptions {
+            allow_flip: false,
+            one_solution: false,
+            max_solutions: Some(1),
+        };
+        assert_eq!(solve(&board, &blocks, &opts).len(), 1);
+    }
+
+    #[test]
+    fn test_max_solutions_limit_two() {
+        let board = Board::new_from_day_pos(
+            Point::new(0, 0),
+            Point::new(2, 0),
+            None,
+            PuzzleType::DragonFjord,
+        );
+        let blocks = Block::get_blocks(PuzzleType::JarringWords);
+        let opts = SolverOptions {
+            allow_flip: false,
+            one_solution: false,
+            max_solutions: Some(2),
+        };
+        assert_eq!(solve(&board, &blocks, &opts).len(), 2);
     }
 }

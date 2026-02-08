@@ -57,6 +57,7 @@ fn main() -> Result<()> {
     let opts = SolverOptions {
         allow_flip,
         one_solution,
+        max_solutions: None,
     };
 
     let month_str: String = matches.opt_get("month").unwrap().unwrap();
