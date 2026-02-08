@@ -65,49 +65,6 @@ pub fn find_solution(
     }
 }
 
-fn parse_json_string_array(s: &str) -> Vec<String> {
-    if s.len() < 2 || !s.starts_with('[') || !s.ends_with(']') {
-        return vec![];
-    }
-    let mut out: Vec<String> = vec![];
-    let mut cur = String::new();
-    let mut in_string = false;
-    let mut escaped = false;
-    for c in s[1..(s.len() - 1)].chars() {
-        if !in_string {
-            if c == '"' {
-                in_string = true;
-                cur.clear();
-            }
-            continue;
-        }
-        if escaped {
-            let decoded = match c {
-                'n' => '\n',
-                'r' => '\r',
-                't' => '\t',
-                '\\' => '\\',
-                '"' => '"',
-                _ => c,
-            };
-            cur.push(decoded);
-            escaped = false;
-            continue;
-        }
-        if c == '\\' {
-            escaped = true;
-            continue;
-        }
-        if c == '"' {
-            out.push(cur.clone());
-            in_string = false;
-            continue;
-        }
-        cur.push(c);
-    }
-    out
-}
-
 fn json_escape(s: &str) -> String {
     let mut out = String::new();
     for c in s.chars() {
@@ -185,6 +142,7 @@ pub fn find_solutions(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::from_str;
 
     #[test]
     fn test_find_solution_compatible() {
@@ -195,7 +153,7 @@ mod tests {
     #[test]
     fn test_find_solutions_json_and_limit() {
         let json = find_solutions(1, 1, 0, 0, false, 1);
-        let sols = parse_json_string_array(&json);
+        let sols: Vec<String> = from_str(&json).expect("find_solutions should return a JSON string array");
         assert_eq!(sols.len(), 1);
         assert!(!sols[0].is_empty());
     }
@@ -203,7 +161,7 @@ mod tests {
     #[test]
     fn test_find_solutions_empty() {
         let json = find_solutions(12, 29, 0, 0, false, 50);
-        let sols = parse_json_string_array(&json);
+        let sols: Vec<String> = from_str(&json).expect("find_solutions should return a JSON string array");
         assert!(sols.is_empty());
     }
 }
