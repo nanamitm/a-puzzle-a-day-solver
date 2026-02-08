@@ -58,6 +58,7 @@ let selectedSolutionIndex = 0;
 let allSolutionsTruncated = false;
 let allSolutionsNonFlipCount = 0;
 let allSolutionsFlipOnlyCount = 0;
+let allModeSuggestEnableFlip = false;
 
 function parsePuzzleType(raw: string | null): PuzzleType | null {
     if (!raw) {
@@ -320,6 +321,7 @@ function clearAllModeView() {
     allSolutionsNonFlipCount = 0;
     allSolutionsFlipOnlyCount = 0;
     allSolutionsTruncated = false;
+    allModeSuggestEnableFlip = false;
     const summary = document.getElementById(ALL_MODE_SUMMARY_ID);
     if (summary) {
         summary.textContent = "";
@@ -445,6 +447,23 @@ async function solveAndCache(
         return cachedTokens;
     }
 
+    if (!allowFlip) {
+        const flipOnly = await rust.then(m => {
+            return m.find_solution(month, day, weekday, puzzle_type, true);
+        });
+        const hint = document.getElementById(HINT_ID);
+        if (hint) {
+            hint.textContent = flipOnly != ""
+                ? "No solution without flipping pieces. Enable \"Allow piece flipping\"."
+                : "No solution found. Try enabling \"Allow piece flipping\".";
+        }
+        cachedTokens = null;
+        hintOrder = [];
+        hintIndex = 0;
+        usedFlip = false;
+        return null;
+    }
+
     if (allowFlip) {
         r = await rust.then(m => {
             return m.find_solution(month, day, weekday, puzzle_type, true);
@@ -488,6 +507,7 @@ async function findAllSolutionsAndCache(
         m.find_solutions(month, day, weekday, puzzleType, false, ALL_SOLUTIONS_FETCH_LIMIT)
     );
     const nonFlipBoards = parseBoardsJson(nonFlipJson);
+    allModeSuggestEnableFlip = false;
 
     let mergedResult = mergeSolutionsNonFlipFirst(
         nonFlipBoards,
@@ -508,6 +528,12 @@ async function findAllSolutionsAndCache(
         if (flipBoards.length > ALL_SOLUTIONS_LIMIT) {
             mergedResult.truncated = true;
         }
+    } else if (nonFlipBoards.length === 0) {
+        const flipProbeJson = await rust.then(m =>
+            m.find_solutions(month, day, weekday, puzzleType, true, 1)
+        );
+        const flipProbeBoards = parseBoardsJson(flipProbeJson);
+        allModeSuggestEnableFlip = flipProbeBoards.length > 0;
     }
 
     if (nonFlipBoards.length > ALL_SOLUTIONS_LIMIT) {
@@ -532,7 +558,10 @@ function renderAllMode(month: number, day: number, weekday: number) {
     boardCard?.classList.add("is-visible");
 
     if (allSolutions.length === 0) {
-        renderSummary("No solution found.");
+        const allowFlip = isAllowFlipEnabled();
+        renderSummary(!allowFlip && allModeSuggestEnableFlip
+            ? "No solution without flipping pieces. Enable \"Allow piece flipping\"."
+            : "No solution found.");
         const table = <HTMLTableElement>document.getElementById(BOARD_TABLE_ID);
         table.textContent = "";
         table.classList.remove("board-table-visible");
@@ -586,26 +615,6 @@ function markAllModeStaleIfNeeded() {
     mode = "single";
     setHintEnabled(true);
     renderSummary("Settings changed. Click \"Solve!\" again to refresh.");
-}
-
-function buttonOnClick() {
-    mode = "single";
-    setHintEnabled(true);
-    const { month, day, weekday, puzzleType } = getCurrentSelection();
-    const allowFlip = isAllowFlipEnabled();
-    resetBoard();
-    solveAndCache(month, day, weekday, puzzleType, allowFlip).then(tokens => {
-        if (!tokens) {
-            return;
-        }
-        renderTable(month, day, weekday, tokens, tokens);
-        focusBoardView();
-        hintIndex = hintOrder.length;
-        const hint = document.getElementById(HINT_ID);
-        if (hint) {
-            hint.textContent = usedFlip ? "(No solution without flipping pieces.)" : "";
-        }
-    });
 }
 
 function onFindAllClick() {
