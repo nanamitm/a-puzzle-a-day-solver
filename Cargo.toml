@@ -5,7 +5,7 @@ authors = ["Keiichi Watanabe <udon.watanabe@gmail.com>"]
 edition = "2018"
 
 [workspace]
-members = [ "cli", "solver" ]
+members = [ "cli", "solver", "solver-ffi" ]
 
 [lib]
 crate-type = ["cdylib"]

@@ -1,9 +1,16 @@
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
 use std::collections::BTreeSet;
+use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
 
 use crate::block::*;
 use crate::board::*;
 use crate::point::*;
+
+static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
+
+pub fn request_cancel() {
+    CANCEL_FLAG.store(true, AtomicOrdering::Relaxed);
+}
 
 //#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct Solution {
@@ -53,6 +60,9 @@ fn dfs(
     solutions: &mut BTreeSet<Solution>,
     cnt: &mut u32,
 ) {
+    if CANCEL_FLAG.load(AtomicOrdering::Relaxed) {
+        return;
+    }
     if opts.one_solution && !solutions.is_empty() {
         return;
     }
@@ -91,6 +101,7 @@ fn dfs(
 }
 
 pub fn solve(board: &Board, blocks: &[Block], opts: &SolverOptions) -> BTreeSet<Solution> {
+    CANCEL_FLAG.store(false, AtomicOrdering::Relaxed);
     let mut candidate_ps = vec![];
     for i in 0..board.height() {
         for j in 0..board.width() {
@@ -118,7 +129,6 @@ pub fn solve(board: &Board, blocks: &[Block], opts: &SolverOptions) -> BTreeSet<
         &mut solutions,
         &mut cnt,
     );
-    println!("Count: {}", cnt);
     solutions
 }
 

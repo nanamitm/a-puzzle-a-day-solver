@@ -1,0 +1,10 @@
+[package]
+name = "solver-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+a-puzzle-a-day-lib = { path = "../solver" }

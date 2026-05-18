@@ -2,3 +2,8 @@
 /node_modules/
 /public/dist/
 .DS_Store
+
+# Qt client — generated files
+qt-client/build/
+qt-client/libsolver_ffi.a
+qt-client/solver_ffi.def
