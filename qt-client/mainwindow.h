@@ -27,6 +27,7 @@ private slots:
     void onNext();
     void onMidnight();
     void onPuzzleTypeChanged();
+    void setAlwaysOnTop(bool on);
 
 private:
     void buildUi();
@@ -45,6 +46,7 @@ private:
     QCheckBox*   m_flipChk       = nullptr;
     QAction*     m_autoAct       = nullptr;
     QAction*     m_slideshowAct  = nullptr;
+    QAction*     m_alwaysOnTopAct = nullptr;
     BoardWidget* m_board         = nullptr;
     QPushButton* m_prevBtn       = nullptr;
     QPushButton* m_nextBtn       = nullptr;

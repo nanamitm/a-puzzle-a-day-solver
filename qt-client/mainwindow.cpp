@@ -95,6 +95,7 @@ MainWindow::~MainWindow()
     s.setValue("slideshow",    slideshowOn);
     s.setValue("allowFlip",    m_flipChk->isChecked());
     s.setValue("puzzleType",   m_typeCombo->currentIndex());
+    s.setValue("alwaysOnTop",  m_alwaysOnTopAct->isChecked());
 
     if (m_worker) { m_worker->quit(); m_worker->wait(); }
 }
@@ -153,8 +154,10 @@ void MainWindow::buildUi()
     auto* gearMenu     = new QMenu(this);
     m_autoAct          = gearMenu->addAction("Auto-update at midnight");
     m_slideshowAct     = gearMenu->addAction("Slideshow (5 min)");
+    m_alwaysOnTopAct   = gearMenu->addAction("Always on top");
     m_autoAct->setCheckable(true);
     m_slideshowAct->setCheckable(true);
+    m_alwaysOnTopAct->setCheckable(true);
     connect(gearBtn, &QPushButton::clicked, this, [this, gearBtn, gearMenu]() {
         gearMenu->exec(gearBtn->mapToGlobal(gearBtn->rect().bottomLeft()));
     });
@@ -267,6 +270,10 @@ void MainWindow::buildUi()
     m_flipChk->setChecked(s.value("allowFlip", false).toBool());
     m_typeCombo->setCurrentIndex(s.value("puzzleType", 0).toInt());
     m_slideshowAct->setChecked(s.value("slideshow", false).toBool());
+    m_alwaysOnTopAct->setChecked(s.value("alwaysOnTop", false).toBool());
+    if (m_alwaysOnTopAct->isChecked())
+        setWindowFlag(Qt::WindowStaysOnTopHint, true);
+    connect(m_alwaysOnTopAct, &QAction::toggled, this, &MainWindow::setAlwaysOnTop);
 
     if (m_slideshowAct->isChecked()) {
         m_findAllChk->setChecked(true);
@@ -293,6 +300,12 @@ void MainWindow::onPuzzleTypeChanged()
     m_board->setPuzzleType(static_cast<PuzzleType>(m_typeCombo->currentIndex()));
     updateBoardDate();
     scheduleSolve();
+}
+
+void MainWindow::setAlwaysOnTop(bool on)
+{
+    setWindowFlag(Qt::WindowStaysOnTopHint, on);
+    show();
 }
 
 int MainWindow::currentWeekdayIdx() const
