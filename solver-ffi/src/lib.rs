@@ -99,7 +99,7 @@ pub extern "C" fn apd_cancel() {
 pub extern "C" fn apd_free_result(result: ApdSolveResult) {
     if !result.solutions.is_null() && result.count > 0 {
         unsafe {
-            drop(Box::from_raw(std::slice::from_raw_parts_mut(
+            drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
                 result.solutions,
                 result.count,
             )));
@@ -109,9 +109,9 @@ pub extern "C" fn apd_free_result(result: ApdSolveResult) {
 
 fn board_to_c(board: &Board) -> ApdBoard {
     let mut cells = [[0u8; 7]; 8];
-    for i in 0..8usize {
-        for j in 0..7usize {
-            cells[i][j] = match board.board[i][j] {
+    for (i, row) in cells.iter_mut().enumerate() {
+        for (j, cell) in row.iter_mut().enumerate() {
+            *cell = match board.board[i][j] {
                 State::Empty     => 0,
                 State::Fill(id)  => (id + 1) as u8,
                 State::Wall('#') => 0xFF,
