@@ -25,6 +25,7 @@ private slots:
     void onSolved();
     void onPrev();
     void onNext();
+    void onSlideshowTick();
     void onMidnight();
     void onPuzzleTypeChanged();
     void setAlwaysOnTop(bool on);

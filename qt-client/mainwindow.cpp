@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include <QRandomGenerator>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPainter>
@@ -208,7 +209,7 @@ void MainWindow::buildUi()
     // ── Slideshow timer ────────────────────────────────────────────────────
     m_slideshow = new QTimer(this);
     m_slideshow->setInterval(5 * 60 * 1000);
-    connect(m_slideshow, &QTimer::timeout, this, &MainWindow::onNext);
+    connect(m_slideshow, &QTimer::timeout, this, &MainWindow::onSlideshowTick);
     connect(m_slideshowAct, &QAction::toggled, this, [this](bool on) {
         if (on) {
             m_savedFindAll = m_findAllChk->isChecked();
@@ -403,14 +404,17 @@ void MainWindow::onSolved()
     for (const ApdBoard& b : out.solutions)
         m_solutions.append(b);
 
-    m_idx = 0;
+    bool multi = m_solutions.size() > 1;
+    if (m_slideshowAct->isChecked() && multi)
+        m_idx = static_cast<int>(QRandomGenerator::global()->bounded(m_solutions.size()));
+    else
+        m_idx = 0;
 
     if (!m_solutions.isEmpty()) {
-        showSolution(0);
-        bool multi = m_solutions.size() > 1;
+        showSolution(m_idx);
         m_prevBtn->setEnabled(multi);
         m_nextBtn->setEnabled(multi);
-        m_solLabel->setText(QString("Solution 1 / %1").arg(m_solutions.size()));
+        m_solLabel->setText(QString("Solution %1 / %2").arg(m_idx + 1).arg(m_solutions.size()));
         if (m_slideshowAct->isChecked() && multi) m_slideshow->start();
         else                                       m_slideshow->stop();
     } else {
@@ -438,6 +442,20 @@ void MainWindow::showSolution(int idx)
     m_board->setBoard(m_solutions[idx].cells);
 }
 
+// Full-period LCG using next-power-of-2 modulus + rejection sampling.
+// a=1664525 (≡5 mod 8), c=1013904223 (odd) — Numerical Recipes constants.
+// Hull-Dobell conditions hold for any power-of-2 modulus, guaranteeing period = n.
+// Values >= m are skipped, so every index in [0, m) is visited exactly once.
+static int lcgNext(int x, int m)
+{
+    int n = 1;
+    while (n < m) n <<= 1;
+    do {
+        x = static_cast<int>((1664525LL * x + 1013904223) & (n - 1));
+    } while (x >= m);
+    return x;
+}
+
 void MainWindow::onPrev()
 {
     if (m_solutions.isEmpty()) return;
@@ -454,6 +472,16 @@ void MainWindow::onNext()
     showSolution(m_idx);
     m_solLabel->setText(QString("Solution %1 / %2").arg(m_idx+1).arg(m_solutions.size()));
     if (m_slideshow->isActive()) m_slideshow->start();
+}
+
+void MainWindow::onSlideshowTick()
+{
+    if (m_solutions.isEmpty()) return;
+    if (m_solutions.size() == 1) { m_slideshow->start(); return; }
+    m_idx = lcgNext(m_idx, m_solutions.size());
+    showSolution(m_idx);
+    m_solLabel->setText(QString("Solution %1 / %2").arg(m_idx+1).arg(m_solutions.size()));
+    m_slideshow->start();
 }
 
 #include "mainwindow.moc"
