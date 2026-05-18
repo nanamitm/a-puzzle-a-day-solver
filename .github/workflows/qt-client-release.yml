@@ -72,8 +72,10 @@ jobs:
         include:
           - arch: x64
             runner: ubuntu-24.04
+            linuxdeploy_arch: x86_64
           - arch: arm64
             runner: ubuntu-24.04-arm
+            linuxdeploy_arch: aarch64
 
     steps:
       - name: Checkout
@@ -88,6 +90,8 @@ jobs:
           sudo apt-get install -y \
             build-essential \
             cmake \
+            file \
+            libfuse2t64 \
             qt6-base-dev \
             qt6-tools-dev \
             libgl1-mesa-dev
@@ -101,7 +105,7 @@ jobs:
       - name: Build Qt client
         run: cmake --build qt-client/build --parallel
 
-      - name: Package release
+      - name: Package tarball
         run: |
           dist="dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}"
           mkdir -p "$dist"
@@ -110,14 +114,74 @@ jobs:
           cp qt-client/readme.txt "$dist/"
           tar -C dist -czf "dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.tar.gz" "APuzzleADaySolverGUI-linux-${{ matrix.arch }}"
 
-      - name: Upload artifact
+      - name: Download AppImage tools
+        continue-on-error: ${{ matrix.arch == 'arm64' }}
+        run: |
+          tools="appimage-tools"
+          mkdir -p "$tools"
+          curl -L \
+            -o "$tools/linuxdeploy.AppImage" \
+            "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${{ matrix.linuxdeploy_arch }}.AppImage"
+          curl -L \
+            -o "$tools/linuxdeploy-plugin-qt.AppImage" \
+            "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-${{ matrix.linuxdeploy_arch }}.AppImage"
+          chmod +x "$tools"/*.AppImage
+
+      - name: Build AppImage
+        continue-on-error: ${{ matrix.arch == 'arm64' }}
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+          LDAI_OUTPUT: APuzzleADaySolverGUI-linux-${{ matrix.arch }}.AppImage
+          LD_LIBRARY_PATH: ${{ github.workspace }}/qt-client/build
+        run: |
+          appdir="APuzzleADaySolverGUI.AppDir"
+          mkdir -p "$appdir/usr/share/applications"
+          cp qt-client/icon.png APuzzleADaySolverGUI.png
+
+          cat > "$appdir/usr/share/applications/APuzzleADaySolverGUI.desktop" <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=A Puzzle A Day Solver
+          Exec=APuzzleADaySolverGUI
+          Icon=APuzzleADaySolverGUI
+          Categories=Game;LogicGame;
+          EOF
+
+          ./appimage-tools/linuxdeploy.AppImage \
+            --appdir "$appdir" \
+            --executable qt-client/build/APuzzleADaySolverGUI \
+            --library qt-client/build/libsolver_ffi.so \
+            --desktop-file "$appdir/usr/share/applications/APuzzleADaySolverGUI.desktop" \
+            --icon-file APuzzleADaySolverGUI.png \
+            --plugin qt \
+            --output appimage
+
+          mkdir -p dist
+          appimage="$(find . -maxdepth 1 -name '*.AppImage' ! -name 'linuxdeploy*' -print -quit)"
+          test -n "$appimage"
+          mv "$appimage" "dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.AppImage"
+
+      - name: Upload tarball artifact
         uses: actions/upload-artifact@v4
         with:
-          name: APuzzleADaySolverGUI-linux-${{ matrix.arch }}
+          name: APuzzleADaySolverGUI-linux-${{ matrix.arch }}-tarball
           path: dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.tar.gz
 
-      - name: Upload GitHub Release asset
+      - name: Upload AppImage artifact
+        if: ${{ hashFiles(format('dist/APuzzleADaySolverGUI-linux-{0}.AppImage', matrix.arch)) != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: APuzzleADaySolverGUI-linux-${{ matrix.arch }}-appimage
+          path: dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.AppImage
+
+      - name: Upload Linux tarball GitHub Release asset
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.tar.gz
+
+      - name: Upload Linux AppImage GitHub Release asset
+        if: ${{ startsWith(github.ref, 'refs/tags/') && hashFiles(format('dist/APuzzleADaySolverGUI-linux-{0}.AppImage', matrix.arch)) != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.AppImage
