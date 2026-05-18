@@ -1,0 +1,64 @@
+name: Qt Client Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "qt-client-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.7.3"
+          host: windows
+          target: desktop
+          arch: win64_msvc2019_64
+          cache: true
+
+      - name: Build Rust FFI
+        run: cargo build -p solver-ffi --release
+
+      - name: Configure Qt client
+        run: cmake -B qt-client/build -S qt-client -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Qt client
+        run: cmake --build qt-client/build --config Release --parallel
+
+      - name: Deploy Qt runtime
+        run: windeployqt qt-client/build/Release/APuzzleADaySolverGUI.exe
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          $dist = "dist/APuzzleADaySolverGUI-windows-x64"
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item qt-client/build/Release/* -Destination $dist -Recurse -Force
+          Copy-Item qt-client/readme.txt -Destination $dist -Force
+          Compress-Archive -Path "$dist/*" -DestinationPath "dist/APuzzleADaySolverGUI-windows-x64.zip" -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: APuzzleADaySolverGUI-windows-x64
+          path: dist/APuzzleADaySolverGUI-windows-x64.zip
+
+      - name: Upload GitHub Release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/APuzzleADaySolverGUI-windows-x64.zip

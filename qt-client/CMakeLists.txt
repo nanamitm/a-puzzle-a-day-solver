@@ -29,12 +29,17 @@ target_include_directories(APuzzleADaySolverGUI PRIVATE ${CMAKE_SOURCE_DIR})
 
 # ── Link against the Rust FFI shared library ───────────────────────────────
 if(WIN32)
-    # MinGW build: link against the dlltool-generated import library.
-    # Run build.bat (or the dlltool commands manually) to create libsolver_ffi.a
-    # before invoking cmake --build.
+    if(MSVC)
+        set(SOLVER_FFI_IMPORT_LIB "${RUST_TARGET_DIR}/solver_ffi.dll.lib")
+    else()
+        # MinGW build: link against the dlltool-generated import library.
+        # Run build.bat (or the dlltool commands manually) to create libsolver_ffi.a
+        # before invoking cmake --build.
+        set(SOLVER_FFI_IMPORT_LIB "${CMAKE_SOURCE_DIR}/libsolver_ffi.a")
+    endif()
     target_link_libraries(APuzzleADaySolverGUI PRIVATE
         Qt6::Widgets
-        "${CMAKE_SOURCE_DIR}/libsolver_ffi.a"
+        "${SOLVER_FFI_IMPORT_LIB}"
     )
     set(SOLVER_FFI_SHARED "${RUST_TARGET_DIR}/solver_ffi.dll")
 
