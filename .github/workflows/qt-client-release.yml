@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -52,14 +52,14 @@ jobs:
           Compress-Archive -Path "$dist/*" -DestinationPath "dist/APuzzleADaySolverGUI-windows-x64.zip" -Force
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: APuzzleADaySolverGUI-windows-x64
           path: dist/APuzzleADaySolverGUI-windows-x64.zip
 
       - name: Upload GitHub Release asset
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/APuzzleADaySolverGUI-windows-x64.zip
 
@@ -79,7 +79,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -162,26 +162,26 @@ jobs:
           mv "$appimage" "dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.AppImage"
 
       - name: Upload tarball artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: APuzzleADaySolverGUI-linux-${{ matrix.arch }}-tarball
           path: dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.tar.gz
 
       - name: Upload AppImage artifact
         if: ${{ hashFiles(format('dist/APuzzleADaySolverGUI-linux-{0}.AppImage', matrix.arch)) != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: APuzzleADaySolverGUI-linux-${{ matrix.arch }}-appimage
           path: dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.AppImage
 
       - name: Upload Linux tarball GitHub Release asset
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.tar.gz
 
       - name: Upload Linux AppImage GitHub Release asset
         if: ${{ startsWith(github.ref, 'refs/tags/') && hashFiles(format('dist/APuzzleADaySolverGUI-linux-{0}.AppImage', matrix.arch)) != '' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/APuzzleADaySolverGUI-linux-${{ matrix.arch }}.AppImage
