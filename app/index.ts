@@ -317,11 +317,6 @@ function setHintEnabled(enabled: boolean) {
 function clearAllModeView() {
     const boardLayout = document.getElementById("board");
     boardLayout?.classList.remove("is-all-mode");
-    allSolutionOrigins = [];
-    allSolutionsNonFlipCount = 0;
-    allSolutionsFlipOnlyCount = 0;
-    allSolutionsTruncated = false;
-    allModeSuggestEnableFlip = false;
     const summary = document.getElementById(ALL_MODE_SUMMARY_ID);
     if (summary) {
         summary.textContent = "";
