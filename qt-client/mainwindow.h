@@ -63,6 +63,7 @@ private:
     bool               m_savedAutoMid = false;
     QElapsedTimer      m_elapsed;
     SolverWorker*      m_worker      = nullptr;
+    quint64            m_solveGen    = 0;  // identifies the current worker; pointers may be reused
     SolveOverlay*      m_overlay     = nullptr;
     QVector<ApdBoard>  m_solutions;
     int                m_idx         = 0;

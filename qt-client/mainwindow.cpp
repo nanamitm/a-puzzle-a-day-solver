@@ -395,8 +395,8 @@ void MainWindow::onTriggerSolve()
     m_overlay->raise();
     m_tickTimer->start();
 
-    connect(m_worker, &QThread::finished, this, [this, worker = m_worker]() {
-        if (m_worker == worker) onSolved();
+    connect(m_worker, &QThread::finished, this, [this, gen = ++m_solveGen]() {
+        if (gen == m_solveGen) onSolved();
     });
     m_worker->start();
 }
