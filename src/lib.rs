@@ -16,6 +16,9 @@ pub fn find_solution(
     puzzle_type: i32,
     allow_flip: bool,
 ) -> String {
+    if !valid_input(month, day, week, puzzle_type) {
+        return String::new();
+    }
     let m = {
         let x = i32::from(month > 6);
         let y = (month - 1) - x * 6;
@@ -65,6 +68,13 @@ pub fn find_solution(
     }
 }
 
+fn valid_input(month: i32, day: i32, week: i32, puzzle_type: i32) -> bool {
+    (1..=12).contains(&month)
+        && (1..=31).contains(&day)
+        && (0..=3).contains(&puzzle_type)
+        && (puzzle_type != 3 || (0..=6).contains(&week))
+}
+
 fn json_escape(s: &str) -> String {
     let mut out = String::new();
     for c in s.chars() {
@@ -90,6 +100,9 @@ pub fn find_solutions(
     allow_flip: bool,
     max_solutions: usize,
 ) -> String {
+    if !valid_input(month, day, week, puzzle_type) {
+        return "[]".to_string();
+    }
     let m = {
         let x = i32::from(month > 6);
         let y = (month - 1) - x * 6;
@@ -143,6 +156,18 @@ pub fn find_solutions(
 mod tests {
     use super::*;
     use serde_json::from_str;
+
+    #[test]
+    fn invalid_inputs_return_empty_results() {
+        for (month, day, week, typ) in [
+            (0, 1, 0, 0), (13, 1, 0, 0), (1, 0, 0, 0), (1, 32, 0, 0),
+            (1, 1, -1, 3), (1, 1, 7, 3), (1, 1, 0, -1), (1, 1, 0, 4),
+            (i32::MIN, i32::MAX, 0, 0),
+        ] {
+            assert!(find_solution(month, day, week, typ, false).is_empty());
+            assert_eq!(find_solutions(month, day, week, typ, false, 1), "[]");
+        }
+    }
 
     #[test]
     fn test_find_solution_compatible() {

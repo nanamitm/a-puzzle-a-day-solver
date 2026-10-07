@@ -77,6 +77,9 @@ fn main() -> Result<()> {
         .context("day is not passed")?
         .parse()
         .context("invalid number was given as day")?;
+    if !(1..=31).contains(&day) {
+        bail!("day must be between 1 and 31");
+    }
     let typ = matches
         .opt_get::<PuzzleType>("type")?
         .unwrap_or(PuzzleType::DragonFjord);

@@ -23,6 +23,7 @@ pub struct ApdSolveResult {
 /// puzzle_type: 0=DragonFjord, 1=JarringWords, 2=Tetromino, 3=WeekDay
 /// weekday:     0=Sun, 1=Mon, ..., 6=Sat  (only used when puzzle_type == 3)
 ///
+/// Invalid inputs return an empty result. weekday is ignored for other puzzle types.
 /// Caller must free the returned result with apd_free_result.
 #[no_mangle]
 pub extern "C" fn apd_solve(
@@ -34,6 +35,18 @@ pub extern "C" fn apd_solve(
     find_all:    bool,
 ) -> ApdSolveResult {
     let t0 = Instant::now();
+
+    if !(1..=12).contains(&month)
+        || !(1..=31).contains(&day)
+        || puzzle_type > 3
+        || (puzzle_type == 3 && weekday > 6)
+    {
+        return ApdSolveResult {
+            solutions: std::ptr::null_mut(),
+            count: 0,
+            elapsed_ms: t0.elapsed().as_secs_f64() * 1000.0,
+        };
+    }
 
     let typ = match puzzle_type {
         1 => PuzzleType::JarringWords,
@@ -120,4 +133,22 @@ fn board_to_c(board: &Board) -> ApdBoard {
         }
     }
     ApdBoard { cells }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn invalid_inputs_return_empty_results() {
+        for (month, day, weekday, typ) in [
+            (0, 1, 0, 0), (13, 1, 0, 0), (1, 0, 0, 0), (1, 32, 0, 0),
+            (1, 1, 7, 3), (1, 1, 0, 4), (u32::MAX, 1, 0, 0),
+        ] {
+            let result = apd_solve(month, day, weekday, typ, false, false);
+            assert!(result.solutions.is_null());
+            assert_eq!(result.count, 0);
+            apd_free_result(result);
+        }
+    }
 }
