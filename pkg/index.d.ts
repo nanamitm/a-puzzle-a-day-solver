@@ -3,11 +3,16 @@
 
 /**
  * month: 1~12, day: 1~31
+ *
+ * Returns "" when there is no solution and throws for invalid input.
  */
 export function find_solution(month: number, day: number, week: number, puzzle_type: number, allow_flip: boolean): string;
 
 /**
  * month: 1~12, day: 1~31
+ *
+ * Returns a JSON string array ("[]" when there is no solution) and throws
+ * for invalid input.
  */
 export function find_solutions(month: number, day: number, week: number, puzzle_type: number, allow_flip: boolean, max_solutions: number): string;
 
@@ -15,9 +20,10 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
-    readonly find_solution: (a: number, b: number, c: number, d: number, e: number) => [number, number];
-    readonly find_solutions: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number];
+    readonly find_solution: (a: number, b: number, c: number, d: number, e: number) => [number, number, number, number];
+    readonly find_solutions: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
+    readonly __externref_table_dealloc: (a: number) => void;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_start: () => void;
 }
