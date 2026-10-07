@@ -97,8 +97,7 @@ fn main() -> Result<()> {
     let week_pos = match typ {
         PuzzleType::WeekDay => {
             let week_str: String = matches
-                .opt_get("week")
-                .unwrap()
+                .opt_get("week")?
                 .context("weekday is not passed")?;
             match WEEK_DAYS.iter().position(|w| *w == week_str) {
                 None => {
