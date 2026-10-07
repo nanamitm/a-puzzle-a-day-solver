@@ -64,6 +64,7 @@ private:
     QElapsedTimer      m_elapsed;
     SolverWorker*      m_worker      = nullptr;
     quint64            m_solveGen    = 0;  // identifies the current worker; pointers may be reused
+    bool               m_restartPending = false;  // running solve was cancelled for a new request
     SolveOverlay*      m_overlay     = nullptr;
     QVector<ApdBoard>  m_solutions;
     int                m_idx         = 0;

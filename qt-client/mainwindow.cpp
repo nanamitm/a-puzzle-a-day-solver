@@ -333,6 +333,11 @@ void MainWindow::scheduleSolve()
     m_prevBtn->setEnabled(false);
     m_nextBtn->setEnabled(false);
     updateBoardDate();
+    if (m_worker && m_worker->isRunning()) {
+        // Stop the outdated solve early; onSolved() restarts once it finishes.
+        m_restartPending = true;
+        m_worker->requestCancel();
+    }
     m_debounce->start();
 }
 
@@ -373,6 +378,7 @@ void MainWindow::onTriggerSolve()
         return;
     }
 
+    m_restartPending = false;
     delete m_worker;
     m_worker = new SolverWorker(this);
     m_worker->date        = m_dateEdit->date();
@@ -406,7 +412,8 @@ void MainWindow::onSolved()
     m_tickTimer->stop();
     m_overlay->hide();
 
-    if (m_worker->date != m_dateEdit->date()
+    if (m_restartPending
+        || m_worker->date != m_dateEdit->date()
         || m_worker->puzzleType != m_typeCombo->currentIndex()
         || m_worker->weekdayIdx != ((m_typeCombo->currentIndex() == 3) ? currentWeekdayIdx() : 0)
         || m_worker->allowFlip != m_flipChk->isChecked()
