@@ -2,15 +2,14 @@
 
 void SolverWorker::run()
 {
-    m_cancelled.store(false, std::memory_order_relaxed);
-
     ApdSolveResult r = apd_solve(
         static_cast<uint32_t>(date.month()),
         static_cast<uint32_t>(date.day()),
         static_cast<uint32_t>(weekdayIdx),
         static_cast<uint32_t>(puzzleType),
         allowFlip,
-        findAll
+        findAll,
+        m_cancelToken
     );
 
     result.elapsedMs = r.elapsed_ms;

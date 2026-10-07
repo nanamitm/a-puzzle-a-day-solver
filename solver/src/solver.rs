@@ -6,12 +6,6 @@ use crate::block::*;
 use crate::board::*;
 use crate::point::*;
 
-static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
-
-pub fn request_cancel() {
-    CANCEL_FLAG.store(true, AtomicOrdering::Relaxed);
-}
-
 //#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub struct Solution {
     pub board: Board,
@@ -51,8 +45,10 @@ pub struct SolverOptions {
     pub max_solutions: Option<usize>,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn dfs(
     opts: &SolverOptions,
+    cancel: &AtomicBool,
     blocks: &[Block],
     available_blocks: &mut BTreeSet<usize>,
     board: &mut Board,
@@ -60,7 +56,7 @@ fn dfs(
     solutions: &mut BTreeSet<Solution>,
     cnt: &mut u32,
 ) {
-    if CANCEL_FLAG.load(AtomicOrdering::Relaxed) {
+    if cancel.load(AtomicOrdering::Relaxed) {
         return;
     }
     if opts.one_solution && !solutions.is_empty() {
@@ -90,7 +86,7 @@ fn dfs(
                 continue;
             }
             moves.push((block.clone(), p));
-            dfs(opts, blocks, available_blocks, board, moves, solutions, cnt);
+            dfs(opts, cancel, blocks, available_blocks, board, moves, solutions, cnt);
             moves.pop();
             board
                 .remove_block(&p, &block)
@@ -101,7 +97,17 @@ fn dfs(
 }
 
 pub fn solve(board: &Board, blocks: &[Block], opts: &SolverOptions) -> BTreeSet<Solution> {
-    CANCEL_FLAG.store(false, AtomicOrdering::Relaxed);
+    solve_with_cancel(board, blocks, opts, &AtomicBool::new(false))
+}
+
+/// Like `solve`, but stops early once `cancel` becomes true and returns the
+/// solutions found so far. A flag that is already set skips the search.
+pub fn solve_with_cancel(
+    board: &Board,
+    blocks: &[Block],
+    opts: &SolverOptions,
+    cancel: &AtomicBool,
+) -> BTreeSet<Solution> {
     let mut candidate_ps = vec![];
     for i in 0..board.height() {
         for j in 0..board.width() {
@@ -122,6 +128,7 @@ pub fn solve(board: &Board, blocks: &[Block], opts: &SolverOptions) -> BTreeSet<
     let mut solutions = BTreeSet::new();
     dfs(
         opts,
+        cancel,
         blocks,
         &mut available_blocks,
         &mut mut_board,
@@ -152,6 +159,24 @@ mod tests {
             max_solutions: None,
         };
         assert_eq!(solve(&board, &blocks, &opts).len(), 2);
+    }
+
+    #[test]
+    fn test_cancel_before_solve_is_not_lost() {
+        let board = Board::new_from_day_pos(
+            Point::new(0, 0),
+            Point::new(2, 0),
+            None,
+            PuzzleType::DragonFjord,
+        );
+        let blocks = Block::get_blocks(PuzzleType::DragonFjord);
+        let opts = SolverOptions {
+            allow_flip: false,
+            one_solution: false,
+            max_solutions: None,
+        };
+        let cancel = AtomicBool::new(true);
+        assert!(solve_with_cancel(&board, &blocks, &opts, &cancel).is_empty());
     }
 
     #[test]

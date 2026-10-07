@@ -99,9 +99,8 @@ MainWindow::~MainWindow()
     s.setValue("alwaysOnTop",  m_alwaysOnTopAct->isChecked());
 
     if (m_worker) {
-        // Retry cancellation in case the worker is still starting its Rust solve.
         m_worker->requestCancel();
-        while (!m_worker->wait(50)) m_worker->requestCancel();
+        m_worker->wait();
     }
 }
 

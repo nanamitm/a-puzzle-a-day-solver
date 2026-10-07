@@ -1,4 +1,5 @@
-use a_puzzle_a_day_lib::{Block, Board, Point, PuzzleType, SolverOptions, State, solve, request_cancel};
+use a_puzzle_a_day_lib::{Block, Board, Point, PuzzleType, SolverOptions, State, solve_with_cancel};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 /// Board representation passed over FFI.
@@ -20,19 +21,59 @@ pub struct ApdSolveResult {
     pub elapsed_ms: f64,
 }
 
+/// Opaque cancellation token for one solve. Create it before starting the
+/// solve so that a cancel requested at any time is never lost.
+pub struct ApdCancelToken {
+    flag: AtomicBool,
+}
+
+/// Create a cancellation token. Free it with apd_cancel_token_free.
+#[no_mangle]
+pub extern "C" fn apd_cancel_token_new() -> *mut ApdCancelToken {
+    Box::into_raw(Box::new(ApdCancelToken { flag: AtomicBool::new(false) }))
+}
+
+/// Request early termination of the solve using `token`. Safe to call from
+/// any thread, before or during the solve.
+///
+/// # Safety
+/// `token` must be null or a live pointer from apd_cancel_token_new.
+#[no_mangle]
+pub unsafe extern "C" fn apd_cancel_token_cancel(token: *const ApdCancelToken) {
+    if let Some(token) = unsafe { token.as_ref() } {
+        token.flag.store(true, Ordering::Relaxed);
+    }
+}
+
+/// # Safety
+/// `token` must be null or a pointer from apd_cancel_token_new that is not
+/// used by a running solve and has not been freed yet.
+#[no_mangle]
+pub unsafe extern "C" fn apd_cancel_token_free(token: *mut ApdCancelToken) {
+    if !token.is_null() {
+        drop(unsafe { Box::from_raw(token) });
+    }
+}
+
 /// puzzle_type: 0=DragonFjord, 1=JarringWords, 2=Tetromino, 3=WeekDay
 /// weekday:     0=Sun, 1=Mon, ..., 6=Sat  (only used when puzzle_type == 3)
+/// cancel:     token from apd_cancel_token_new, or null for an uncancellable solve
 ///
 /// Invalid inputs return an empty result. weekday is ignored for other puzzle types.
 /// Caller must free the returned result with apd_free_result.
+///
+/// # Safety
+/// `cancel` must be null or a live pointer from apd_cancel_token_new that
+/// stays valid until this call returns.
 #[no_mangle]
-pub extern "C" fn apd_solve(
+pub unsafe extern "C" fn apd_solve(
     month:       u32,
     day:         u32,
     weekday:     u32,
     puzzle_type: u32,
     allow_flip:  bool,
     find_all:    bool,
+    cancel:      *const ApdCancelToken,
 ) -> ApdSolveResult {
     let t0 = Instant::now();
 
@@ -84,7 +125,9 @@ pub extern "C" fn apd_solve(
         max_solutions: None,
     };
 
-    let solutions  = solve(&board, &blocks, &opts);
+    let not_cancelled = AtomicBool::new(false);
+    let cancel = unsafe { cancel.as_ref() }.map_or(&not_cancelled, |t| &t.flag);
+    let solutions  = solve_with_cancel(&board, &blocks, &opts, cancel);
     let elapsed_ms = t0.elapsed().as_secs_f64() * 1000.0;
 
     let boards: Vec<ApdBoard> = solutions.iter().map(|sol| board_to_c(&sol.board)).collect();
@@ -99,13 +142,6 @@ pub extern "C" fn apd_solve(
     };
 
     ApdSolveResult { solutions: ptr, count, elapsed_ms }
-}
-
-/// Request cancellation of an in-progress solve.
-/// The solver checks this flag at each DFS call and returns early if set.
-#[no_mangle]
-pub extern "C" fn apd_cancel() {
-    request_cancel();
 }
 
 #[no_mangle]
@@ -145,10 +181,24 @@ mod tests {
             (0, 1, 0, 0), (13, 1, 0, 0), (1, 0, 0, 0), (1, 32, 0, 0),
             (1, 1, 7, 3), (1, 1, 0, 4), (u32::MAX, 1, 0, 0),
         ] {
-            let result = apd_solve(month, day, weekday, typ, false, false);
+            let result = unsafe {
+                apd_solve(month, day, weekday, typ, false, false, std::ptr::null())
+            };
             assert!(result.solutions.is_null());
             assert_eq!(result.count, 0);
             apd_free_result(result);
+        }
+    }
+
+    #[test]
+    fn cancel_before_solve_returns_no_solutions() {
+        let token = apd_cancel_token_new();
+        unsafe {
+            apd_cancel_token_cancel(token);
+            let result = apd_solve(1, 1, 0, 0, false, true, token);
+            assert_eq!(result.count, 0);
+            apd_free_result(result);
+            apd_cancel_token_free(token);
         }
     }
 }
