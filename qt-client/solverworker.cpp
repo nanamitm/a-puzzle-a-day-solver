@@ -22,5 +22,4 @@ void SolverWorker::run()
         result.solutions.push_back(r.solutions[i]);
 
     apd_free_result(r);
-    emit solved();
 }

@@ -98,7 +98,11 @@ MainWindow::~MainWindow()
     s.setValue("puzzleType",   m_typeCombo->currentIndex());
     s.setValue("alwaysOnTop",  m_alwaysOnTopAct->isChecked());
 
-    if (m_worker) { m_worker->quit(); m_worker->wait(); }
+    if (m_worker) {
+        // Retry cancellation in case the worker is still starting its Rust solve.
+        m_worker->requestCancel();
+        while (!m_worker->wait(50)) m_worker->requestCancel();
+    }
 }
 
 void MainWindow::buildUi()
@@ -324,6 +328,11 @@ void MainWindow::updateBoardDate()
 
 void MainWindow::scheduleSolve()
 {
+    m_slideshow->stop();
+    m_solutions.clear();
+    m_prevBtn->setEnabled(false);
+    m_nextBtn->setEnabled(false);
+    updateBoardDate();
     m_debounce->start();
 }
 
@@ -361,9 +370,6 @@ void MainWindow::updateTodayMarker()
 void MainWindow::onTriggerSolve()
 {
     if (m_worker && m_worker->isRunning()) {
-        connect(m_worker, &SolverWorker::solved, this, [this]() {
-            scheduleSolve();
-        }, Qt::SingleShotConnection);
         return;
     }
 
@@ -389,7 +395,7 @@ void MainWindow::onTriggerSolve()
     m_overlay->raise();
     m_tickTimer->start();
 
-    connect(m_worker, &SolverWorker::solved, this, &MainWindow::onSolved);
+    connect(m_worker, &QThread::finished, this, &MainWindow::onSolved);
     m_worker->start();
 }
 
@@ -397,6 +403,15 @@ void MainWindow::onSolved()
 {
     m_tickTimer->stop();
     m_overlay->hide();
+
+    if (m_worker->date != m_dateEdit->date()
+        || m_worker->puzzleType != m_typeCombo->currentIndex()
+        || m_worker->weekdayIdx != ((m_typeCombo->currentIndex() == 3) ? currentWeekdayIdx() : 0)
+        || m_worker->allowFlip != m_flipChk->isChecked()
+        || m_worker->findAll != m_findAllChk->isChecked()) {
+        scheduleSolve();
+        return;
+    }
 
     const SolveResult& out  = m_worker->result;
     const QDate        date = m_worker->date;

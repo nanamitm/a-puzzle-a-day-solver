@@ -23,7 +23,7 @@ public:
     bool  allowFlip   = false;
     bool  findAll     = false;
 
-    // Read after solved() signal
+    // Read after QThread::finished signal
     SolveResult result;
 
     // Call from any thread to stop the solver early via FFI cancel flag
@@ -31,9 +31,6 @@ public:
         apd_cancel();
         m_cancelled.store(true, std::memory_order_relaxed);
     }
-
-signals:
-    void solved();
 
 protected:
     void run() override;
