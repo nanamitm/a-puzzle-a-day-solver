@@ -24,12 +24,14 @@ jobs:
       - name: Set up Qt
         uses: jurplel/install-qt-action@v4
         with:
-          # aqtinstall 3.3.0 cannot fetch checksums for Qt 6.11+ yet
-          version: "6.10.3"
+          version: "6.11.1"
           host: windows
           target: desktop
           arch: win64_msvc2022_64
           cache: true
+          # aqtinstall 3.3.0 (latest release) cannot fetch Qt 6.11+ checksums.
+          # Pin an upstream commit that can; return to a release once 3.4 ships.
+          aqtsource: "git+https://github.com/miurahr/aqtinstall.git@076e1659807d0b362a3ed684d54c2e9c775eb9c7"
 
       - name: Build Rust FFI
         run: cargo build -p solver-ffi --release
