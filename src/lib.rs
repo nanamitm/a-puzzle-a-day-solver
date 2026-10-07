@@ -9,16 +9,16 @@ extern "C" {
 
 #[wasm_bindgen]
 /// month: 1~12, day: 1~31
+///
+/// Returns "" when there is no solution and throws for invalid input.
 pub fn find_solution(
     month: i32,
     day: i32,
     week: i32,
     puzzle_type: i32,
     allow_flip: bool,
-) -> String {
-    if !valid_input(month, day, week, puzzle_type) {
-        return String::new();
-    }
+) -> Result<String, String> {
+    validate_input(month, day, week, puzzle_type)?;
     let m = {
         let x = i32::from(month > 6);
         let y = (month - 1) - x * 6;
@@ -62,17 +62,26 @@ pub fn find_solution(
         .collect::<Vec<_>>();
 
     if sols.is_empty() {
-        "".to_string()
+        Ok("".to_string())
     } else {
-        sols[0].to_string()
+        Ok(sols[0].to_string())
     }
 }
 
-fn valid_input(month: i32, day: i32, week: i32, puzzle_type: i32) -> bool {
-    (1..=12).contains(&month)
-        && (1..=31).contains(&day)
-        && (0..=3).contains(&puzzle_type)
-        && (puzzle_type != 3 || (0..=6).contains(&week))
+fn validate_input(month: i32, day: i32, week: i32, puzzle_type: i32) -> Result<(), String> {
+    if !(1..=12).contains(&month) {
+        return Err(format!("invalid month: {month}"));
+    }
+    if !(1..=31).contains(&day) {
+        return Err(format!("invalid day: {day}"));
+    }
+    if !(0..=3).contains(&puzzle_type) {
+        return Err(format!("invalid puzzle_type: {puzzle_type}"));
+    }
+    if puzzle_type == 3 && !(0..=6).contains(&week) {
+        return Err(format!("invalid week: {week}"));
+    }
+    Ok(())
 }
 
 fn json_escape(s: &str) -> String {
@@ -92,6 +101,9 @@ fn json_escape(s: &str) -> String {
 
 #[wasm_bindgen]
 /// month: 1~12, day: 1~31
+///
+/// Returns a JSON string array ("[]" when there is no solution) and throws
+/// for invalid input.
 pub fn find_solutions(
     month: i32,
     day: i32,
@@ -99,10 +111,8 @@ pub fn find_solutions(
     puzzle_type: i32,
     allow_flip: bool,
     max_solutions: usize,
-) -> String {
-    if !valid_input(month, day, week, puzzle_type) {
-        return "[]".to_string();
-    }
+) -> Result<String, String> {
+    validate_input(month, day, week, puzzle_type)?;
     let m = {
         let x = i32::from(month > 6);
         let y = (month - 1) - x * 6;
@@ -149,7 +159,7 @@ pub fn find_solutions(
         .iter()
         .map(|b| format!("\"{}\"", json_escape(&b.to_string())))
         .collect::<Vec<_>>();
-    format!("[{}]", json_items.join(","))
+    Ok(format!("[{}]", json_items.join(",")))
 }
 
 #[cfg(test)]
@@ -158,26 +168,26 @@ mod tests {
     use serde_json::from_str;
 
     #[test]
-    fn invalid_inputs_return_empty_results() {
+    fn invalid_inputs_return_errors() {
         for (month, day, week, typ) in [
             (0, 1, 0, 0), (13, 1, 0, 0), (1, 0, 0, 0), (1, 32, 0, 0),
             (1, 1, -1, 3), (1, 1, 7, 3), (1, 1, 0, -1), (1, 1, 0, 4),
             (i32::MIN, i32::MAX, 0, 0),
         ] {
-            assert!(find_solution(month, day, week, typ, false).is_empty());
-            assert_eq!(find_solutions(month, day, week, typ, false, 1), "[]");
+            assert!(find_solution(month, day, week, typ, false).is_err());
+            assert!(find_solutions(month, day, week, typ, false, 1).is_err());
         }
     }
 
     #[test]
     fn test_find_solution_compatible() {
-        let s = find_solution(1, 1, 0, 0, false);
+        let s = find_solution(1, 1, 0, 0, false).unwrap();
         assert!(!s.is_empty());
     }
 
     #[test]
     fn test_find_solutions_json_and_limit() {
-        let json = find_solutions(1, 1, 0, 0, false, 1);
+        let json = find_solutions(1, 1, 0, 0, false, 1).unwrap();
         let sols: Vec<String> = from_str(&json).expect("find_solutions should return a JSON string array");
         assert_eq!(sols.len(), 1);
         assert!(!sols[0].is_empty());
@@ -185,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_find_solutions_empty() {
-        let json = find_solutions(12, 29, 0, 0, false, 50);
+        let json = find_solutions(12, 29, 0, 0, false, 50).unwrap();
         let sols: Vec<String> = from_str(&json).expect("find_solutions should return a JSON string array");
         assert!(sols.is_empty());
     }

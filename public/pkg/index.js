@@ -4,6 +4,8 @@
 
 /**
  * month: 1~12, day: 1~31
+ *
+ * Returns "" when there is no solution and throws for invalid input.
  * @param {number} month
  * @param {number} day
  * @param {number} week
@@ -12,8 +14,8 @@
  * @returns {string}
  */
 export function find_solution(month, day, week, puzzle_type, allow_flip) {
-    let deferred1_0;
-    let deferred1_1;
+    let deferred2_0;
+    let deferred2_1;
     try {
         _assertNum(month);
         _assertNum(day);
@@ -21,16 +23,25 @@ export function find_solution(month, day, week, puzzle_type, allow_flip) {
         _assertNum(puzzle_type);
         _assertBoolean(allow_flip);
         const ret = wasm.find_solution(month, day, week, puzzle_type, allow_flip);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
+        var ptr1 = ret[0];
+        var len1 = ret[1];
+        if (ret[3]) {
+            ptr1 = 0; len1 = 0;
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        deferred2_0 = ptr1;
+        deferred2_1 = len1;
+        return getStringFromWasm0(ptr1, len1);
     } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
 }
 
 /**
  * month: 1~12, day: 1~31
+ *
+ * Returns a JSON string array ("[]" when there is no solution) and throws
+ * for invalid input.
  * @param {number} month
  * @param {number} day
  * @param {number} week
@@ -40,8 +51,8 @@ export function find_solution(month, day, week, puzzle_type, allow_flip) {
  * @returns {string}
  */
 export function find_solutions(month, day, week, puzzle_type, allow_flip, max_solutions) {
-    let deferred1_0;
-    let deferred1_1;
+    let deferred2_0;
+    let deferred2_1;
     try {
         _assertNum(month);
         _assertNum(day);
@@ -50,11 +61,17 @@ export function find_solutions(month, day, week, puzzle_type, allow_flip, max_so
         _assertBoolean(allow_flip);
         _assertNum(max_solutions);
         const ret = wasm.find_solutions(month, day, week, puzzle_type, allow_flip, max_solutions);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
+        var ptr1 = ret[0];
+        var len1 = ret[1];
+        if (ret[3]) {
+            ptr1 = 0; len1 = 0;
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        deferred2_0 = ptr1;
+        deferred2_1 = len1;
+        return getStringFromWasm0(ptr1, len1);
     } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
 }
 
@@ -65,6 +82,14 @@ export function find_solutions(month, day, week, puzzle_type, allow_flip, max_so
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,
+        __wbg___wbindgen_throw_be289d5034ed271b: function(arg0, arg1) {
+            throw new Error(getStringFromWasm0(arg0, arg1));
+        },
+        __wbindgen_cast_0000000000000001: function() { return logError(function (arg0, arg1) {
+            // Cast intrinsic for `Ref(String) -> Externref`.
+            const ret = getStringFromWasm0(arg0, arg1);
+            return ret;
+        }, arguments); },
         __wbindgen_init_externref_table: function() {
             const table = wasm.__wbindgen_externrefs;
             const offset = table.grow(4);
@@ -106,6 +131,28 @@ function getUint8ArrayMemory0() {
         cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
     }
     return cachedUint8ArrayMemory0;
+}
+
+function logError(f, args) {
+    try {
+        return f.apply(this, args);
+    } catch (e) {
+        let error = (function () {
+            try {
+                return e instanceof Error ? `${e.message}\n\nStack:\n${e.stack}` : e.toString();
+            } catch(_) {
+                return "<failed to stringify thrown value>";
+            }
+        }());
+        console.error("wasm-bindgen: imported JS function that was not marked as `catch` threw an error:", error);
+        throw e;
+    }
+}
+
+function takeFromExternrefTable0(idx) {
+    const value = wasm.__wbindgen_externrefs.get(idx);
+    wasm.__externref_table_dealloc(idx);
+    return value;
 }
 
 let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
