@@ -24,7 +24,8 @@ jobs:
       - name: Set up Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: "6.11.1"
+          # aqtinstall 3.3.0 cannot fetch checksums for Qt 6.11+ yet
+          version: "6.10.3"
           host: windows
           target: desktop
           arch: win64_msvc2022_64
