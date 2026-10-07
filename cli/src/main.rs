@@ -14,13 +14,13 @@ fn main() -> Result<()> {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.reqopt(
+    opts.optopt(
         "m",
         "month",
         "month",
         &format!("[{}]", MONTH_NAMES.to_vec().join("|")),
     );
-    opts.reqopt("d", "day", "day", "[1-31]");
+    opts.optopt("d", "day", "day", "[1-31]");
     opts.optopt(
         "w",
         "week",
@@ -60,7 +60,7 @@ fn main() -> Result<()> {
         max_solutions: None,
     };
 
-    let month_str: String = matches.opt_get("month").unwrap().unwrap();
+    let month_str: String = matches.opt_get("month")?.context("month is not passed")?;
     let month_pos = match MONTH_NAMES.iter().position(|m| *m == month_str) {
         None => {
             bail!("unexpected month name: {}", month_str);
@@ -73,9 +73,8 @@ fn main() -> Result<()> {
     };
 
     let day: u32 = matches
-        .opt_get::<String>("day")
-        .unwrap()
-        .unwrap()
+        .opt_get::<String>("day")?
+        .context("day is not passed")?
         .parse()
         .context("invalid number was given as day")?;
     let typ = matches
