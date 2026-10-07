@@ -38,7 +38,8 @@ macOS
 
   ※ build.bat の先頭にある変数を環境に合わせて変更してください:
       set MINGW_BIN=C:\Qt\Tools\mingw1310_64\bin
-      set QT_DIR=C:\Qt\6.9.2\mingw_64
+      set QT_DIR=C:\Qt\6.11.1\mingw_64
+      set CMAKE_BIN=C:\Qt\Tools\CMake_64\bin
 
   処理内容:
     [1/3] Rust FFI ライブラリ (solver_ffi.dll) をビルド
@@ -46,7 +47,7 @@ macOS
     [3/3] CMake で Qt アプリをビルド
 
 (2-3) 初回実行時は windeployqt で Qt DLL を配置する
-  C:\Qt\6.9.2\mingw_64\bin\windeployqt.exe build\APuzzleADaySolverGUI.exe
+  C:\Qt\6.11.1\mingw_64\bin\windeployqt.exe build\APuzzleADaySolverGUI.exe
 
 (2-4) 実行
   build\APuzzleADaySolverGUI.exe
@@ -97,7 +98,7 @@ Windows (MinGW):
   C:\Qt\Tools\mingw1310_64\bin\gendef.exe ..\target\release\solver_ffi.dll
   C:\Qt\Tools\mingw1310_64\bin\dlltool.exe -d solver_ffi.def -l libsolver_ffi.a --dllname solver_ffi.dll
   cmake -B build -S . -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ^
-        -DCMAKE_PREFIX_PATH="C:\Qt\6.9.2\mingw_64" ^
+        -DCMAKE_PREFIX_PATH="C:\Qt\6.11.1\mingw_64" ^
         -DCMAKE_CXX_COMPILER="C:\Qt\Tools\mingw1310_64\bin\g++.exe"
   cmake --build build --parallel
 

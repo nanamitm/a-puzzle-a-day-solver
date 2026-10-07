@@ -2,8 +2,12 @@
 setlocal
 
 set MINGW_BIN=C:\Qt\Tools\mingw1310_64\bin
-set QT_DIR=C:\Qt\6.9.2\mingw_64
+set QT_DIR=C:\Qt\6.11.1\mingw_64
+set CMAKE_BIN=C:\Qt\Tools\CMake_64\bin
 set RUST_RELEASE=..\target\release
+
+:: Make Qt's bundled CMake and the MinGW toolchain (mingw32-make) available
+set PATH=%CMAKE_BIN%;%MINGW_BIN%;%QT_DIR%\bin;%PATH%
 
 :: Step 1: Build the Rust FFI library (MSVC target, default)
 echo [1/3] Building Rust FFI library...
